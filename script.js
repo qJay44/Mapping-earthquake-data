@@ -8,14 +8,15 @@ let w = canvas.width = window.innerWidth;
 let h = canvas.height = window.innerHeight;
 
 
-// 48.1081466, 19.4905364
-const lon = 48.1081466;
-const lat = 11.4905364;
+// 31.2304° N, 121.4737° E
+const lat = 31.2304;
+const lon = 121.4737;
 const img = new Image();
 
 const mapProp = {
     url         : 'https://api.mapbox.com/styles/v1/mapbox/',
     style       : 'dark-v10',
+    tilesize    : 512,
     token       : token,
     lon         : 0,
     lat         : 0,
@@ -26,23 +27,65 @@ const mapProp = {
     height      : 720
 }
 
+const scaleW = mapProp.width / 512 / 2;
+const scaleH = mapProp.height / 512 / 2;
+
 const c_lon = 0;
 const c_lat = 0;
 
 function main() {
     update_src();
 
-    let cx = mercX(c_lon);
-    let cy = mercY(c_lat);
+    let cx = mercX(c_lon) + (w - mapProp.width) / 2;
+    let cy = mercY(c_lat) + (h - mapProp.height) / 2;
 
     let x = mercX(lon) - cx;
     let y = mercY(lat) - cy;
 
+    console.log(x);
+
+    // ctx.drawImage(img, 0, 0);
     ctx.drawImage(img, (w - mapProp.width) / 2, (h - mapProp.height) / 2);
     ctx.fillStyle = 'hsla(255, 100%, 50%, 1)';
     ctx.beginPath();
-    ctx.arc(x, y, 40, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
     ctx.fill();
+    ctx.closePath();
+
+    ctx.fillStyle = 'hsla(210, 100%, 50%, 1)';
+    ctx.beginPath();
+    ctx.arc(x, y, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.closePath();
+
+
+    // grid
+    ctx.strokeStyle = 'hsla(0, 100%, 50%, 1)';
+    ctx.beginPath();
+    ctx.moveTo(0, h / 2);
+    ctx.lineTo(w, h / 2);
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.strokeStyle = 'hsla(0, 100%, 50%, 1)';
+    ctx.beginPath();
+    ctx.moveTo(w / 2, 0);
+    ctx.lineTo(w / 2, h);
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.strokeStyle = 'hsla(0, 100%, 50%, 1)';
+    ctx.beginPath();
+    ctx.moveTo((w - mapProp.width) / 2, 0);
+    ctx.lineTo((w - mapProp.width) / 2, h);
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.strokeStyle = 'hsla(0, 100%, 50%, 1)';
+    ctx.beginPath();
+    ctx.moveTo((w + mapProp.width) / 2, 0);
+    ctx.lineTo((w + mapProp.width) / 2, h);
+    ctx.stroke();
     ctx.closePath();
 }
 
@@ -66,14 +109,14 @@ function update_src() {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 // converting degrees to radians
-function toRadians(angle) {
-    return angle * (Math.PI / 180);
+function toRadians(degrees) {
+    return degrees * (Math.PI / 180);
 }
 
 // world 'x' coordinate
 function mercX(numDeg) { 
     numRad = toRadians(numDeg);
-    const part1 = (256 / Math.PI) * Math.pow(2, mapProp.zoom);
+    const part1 = ((mapProp.tilesize * scaleW) / (2 * Math.PI)) * Math.pow(2, mapProp.zoom);
     const part2 = (numRad + Math.PI);
 
     return part1 * part2;
@@ -82,7 +125,7 @@ function mercX(numDeg) {
 // world 'y' coordinate
 function mercY(numDeg) { 
     numRad = toRadians(numDeg);
-    const part1 = (256 / Math.PI) * Math.pow(2, mapProp.zoom);
+    const part1 = ((mapProp.tilesize * scaleH) / (2 * Math.PI)) * Math.pow(2, mapProp.zoom);
     const part2 = Math.PI - Math.log(Math.tan(Math.PI / 4 + numRad / 2));
 
     return part1 * part2;
