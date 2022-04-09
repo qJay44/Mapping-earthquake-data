@@ -11,8 +11,7 @@ def fromJS(url):
     response = urllib.request.urlopen(url)
     lines = [l.decode('utf-8') for l in response.readlines()]
     cr = csv.reader(lines)
-    
-    eel.toJS([l for l in cr])
 
+    eel.toJS([_ for _ in cr])
 
-eel.start('index.html', size=(1920, 1080))
+eel.start('index.html', size=(1920, 937))

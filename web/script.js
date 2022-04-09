@@ -3,15 +3,10 @@
 
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
+const dataURL = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv';
 
-let w = canvas.width = window.innerWidth;
-let h = canvas.height = window.innerHeight;
-
-
-// 31.2304° N, 121.4737° E
-const lat = 31.2304;
-const lon = 121.4737;
-const img = new Image();
+const w = canvas.width = window.innerWidth;
+const h = canvas.height = window.innerHeight;
 
 const mapProp = {
     mainURL     : 'https://api.mapbox.com/styles/v1/mapbox/',
@@ -23,59 +18,85 @@ const mapProp = {
     zoom        : 1,
     bearing     : 0,
     pitch       : 0,
-    width       : 1024,
-    height      : 512,
+    width       : 1280,
+    height      : 720,
 }
 
-const tileWidth = mapProp.width / Math.floor(mapProp.width / mapProp.tilesize);
-const tileHeight = mapProp.height / Math.floor(mapProp.height / mapProp.tilesize);
-
-const c_lon = 0;
-const c_lat = 0;
-const url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv';
-
-function main() {
-    updateURL();
-    const cx = mercX(c_lon);
-    const cy = mercY(c_lat);
-
-    const x = mercX(lon) - cx + mapProp.width / 2 + (w - mapProp.width) / 2;
-    const y = mercY(lat) - cy + mapProp.height / 2 + (h - mapProp.height) / 2;
-
-    ctx.drawImage(img, (w - mapProp.width) / 2, (h - mapProp.height) / 2);
-    ctx.fillStyle = 'hsla(210, 100%, 50%, 1)';
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.closePath();
-
-    callPython(url);
-}
-
-function dataHandler() {
-    let data = msg;
-    let header = data.shift();
-    console.log(header);
-}
-
-
-// when window resizing
-window.onresize = () => {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-
-    ctx.clearRect(0, 0, w, h);
-    updateURL();
-    ctx.drawImage(img, (w - mapProp.width) / 2, (h - mapProp.height) / 2);
-}
-
-// updating map
-function updateURL() {
+function loadMap() {
+    const img = new Image();
     img.src = `${mapProp.mainURL}${mapProp.style}/static/${mapProp.lon},${mapProp.lat},${mapProp.zoom},${mapProp.bearing},${mapProp.pitch}/${mapProp.width}x${mapProp.height}?access_token=${mapProp.token}`
+    ctx.drawImage(img, (w - mapProp.width) / 2, (h - mapProp.height) / 2);
 }
+
+function colorBar() {
+    const gradStartX = (w + mapProp.width) / 2 + 100;
+    const gradStartY = (h + mapProp.height) / 2;
+    const gradEndX = gradStartX + 50;
+    const gradEndY = (h - mapProp.height) / 2;
+    const gradient = ctx.createLinearGradient(gradStartX, gradStartY, gradEndX, gradEndY);
+    ctx.font = '24px sans-serif';
+    ctx.beginPath();
+
+    for (let i = 0; i <= 10; i++) {
+        const step = gradStartY - i * (mapProp.height / 10);
+
+        gradient.addColorStop(i / 10, `hsl(${90 - (i * 90) / 10}, 100%, 50%, 1)`);
+
+        // measure lines
+        ctx.moveTo(gradEndX, step);
+        ctx.lineTo(gradEndX + 20, step)
+        ctx.stroke();
+
+        // bar values
+        ctx.fillStyle = 'white';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${i / 10}`, gradEndX + 30, step);
+    }
+    
+    // filling rectangle with a gradient
+    ctx.fillStyle = gradient;
+    ctx.fillRect(gradStartX, gradStartY, 50, -mapProp.height);
+
+    // rectangle border
+    ctx.strokeStyle = 'white';
+    ctx.rect(gradStartX, gradStartY, 50, -mapProp.height);
+    ctx.stroke();
+    ctx.closePath();
+}
+
+loadMap();
+colorBar();
 
 ///////////////////////////////////////////////////////////////////////////////////////
-//                                          Calculus part
+//                                  Calculus part
+
+// data visualization
+function dataHandler(msg) {
+    const data = msg;
+    data.shift();
+    
+    const cx = mercX(0);
+    const cy = mercY(0);
+
+    const offsetX = mapProp.width / 2 + (w - mapProp.width) / 2;
+    const offsetY = mapProp.height / 2 + (h - mapProp.height) / 2;
+
+    data.forEach(eq => {
+        const lon = eq[2];
+        const lat = eq[1];
+        const mag = eq[4];
+
+        const x = mercX(lon) - cx + offsetX;
+        const y = mercY(lat) - cy + offsetY;
+        const colorAngle = 90 - ((mag * 90) / 10); 
+
+        ctx.fillStyle = `hsla(${colorAngle}, 100%, 50%, 1)`;
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.closePath();
+    });
+}
 
 // converting degrees to radians
 function toRadians(degrees) {
@@ -85,7 +106,7 @@ function toRadians(degrees) {
 // world 'x' coordinate
 function mercX(numDeg) { 
     numRad = toRadians(numDeg);
-    const part1 = ((tileWidth / 2) / Math.PI) * Math.pow(2, mapProp.zoom);
+    const part1 = ((mapProp.tilesize / 2) / Math.PI) * Math.pow(2, mapProp.zoom);
     const part2 = (numRad + Math.PI);
 
     return part1 * part2;
@@ -94,7 +115,7 @@ function mercX(numDeg) {
 // world 'y' coordinate
 function mercY(numDeg) { 
     numRad = toRadians(numDeg);
-    const part1 = ((tileHeight / 2) / Math.PI) * Math.pow(2, mapProp.zoom);
+    const part1 = ((mapProp.tilesize / 2) / Math.PI) * Math.pow(2, mapProp.zoom);
     const part2 = Math.PI - Math.log(Math.tan(Math.PI / 4 + numRad / 2));
 
     return part1 * part2;
@@ -115,5 +136,7 @@ function toJS(msg) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
+//                             Code execution start
 
-main();
+
+callPython(dataURL);
