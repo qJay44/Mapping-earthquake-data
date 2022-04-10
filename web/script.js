@@ -1,6 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                      Preload part
 
+const img = document.getElementById('mapImage');
 const canvas = document.querySelector('#static');
 const ctx = canvas.getContext('2d');
 
@@ -9,7 +10,6 @@ const ctxData = canvasData.getContext('2d');
 
 const w = canvas.width = canvasData.width = window.innerWidth;
 const h = canvas.height = canvasData.height = window.innerHeight;
-const dataURL = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv';
 
 const mapProp = {
     mainURL     : 'https://api.mapbox.com/styles/v1/mapbox/',
@@ -84,6 +84,7 @@ function dataHandler(msg) {
     const offsetX = mapProp.width / 2 + (w - mapProp.width) / 2;
     const offsetY = mapProp.height / 2 + (h - mapProp.height) / 2;
 
+    // mapping data
     data.forEach(eq => {
         const lon = eq[2];
         const lat = eq[1];
@@ -100,7 +101,6 @@ function dataHandler(msg) {
         ctxData.closePath();
     });
      
-    const img = document.getElementById('mapImage');
     img.src = canvasData.toDataURL('image/png');
     ctxData.clearRect(0, 0, w, h);
     img.onload = () => { img.style.opacity = 1; }
@@ -130,6 +130,20 @@ function mercY(numDeg) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
+//                                   Buttons
+
+let activeButton;
+
+// button 'onclick' listener
+function loadData(btnType) {
+    if (btnType == activeButton) return;
+    img.style.opacity = 0;
+
+    activeButton = btnType;
+    callPython(`https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${btnType}.csv`)
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
 //                                  Python call
 
 // Sending the url to the Python
@@ -142,9 +156,3 @@ eel.expose(toJS)
 function toJS(msg) {
     dataHandler(msg);
 }
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                             Code execution start
-
-
-callPython(dataURL);

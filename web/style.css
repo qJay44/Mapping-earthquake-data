@@ -14,3 +14,28 @@ canvas {
     transition: opacity 0.3s;
 }
 
+.buttons {
+    user-select: none;
+    position: absolute;
+    display: flex;
+    color: white;
+    left: 50%;
+    top: 7%;
+    transform: translate(-50%, -7%);
+}
+
+.buttons div {
+    white-space: nowrap;
+    opacity: 0.3;
+    font-size: 24px;
+    margin-left: 80px;
+    margin-right: 80px;
+    padding: 10px;
+    border: 2px solid white;
+    transition: opacity 0.3s;
+}
+
+.buttons div:hover {
+    opacity: 1;
+    cursor: pointer;
+}
