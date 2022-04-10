@@ -3,3 +3,14 @@ body {
     background: rgb(7, 7, 7);
     overflow: hidden;
 }
+
+canvas {
+    position: absolute;
+}
+
+#mapImage {
+    position: absolute;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+

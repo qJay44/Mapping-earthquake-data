@@ -1,12 +1,15 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                      Preload part
 
-const canvas = document.querySelector('canvas');
+const canvas = document.querySelector('#static');
 const ctx = canvas.getContext('2d');
-const dataURL = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv';
 
-const w = canvas.width = window.innerWidth;
-const h = canvas.height = window.innerHeight;
+const canvasData = document.querySelector('#data');
+const ctxData = canvasData.getContext('2d');
+
+const w = canvas.width = canvasData.width = window.innerWidth;
+const h = canvas.height = canvasData.height = window.innerHeight;
+const dataURL = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv';
 
 const mapProp = {
     mainURL     : 'https://api.mapbox.com/styles/v1/mapbox/',
@@ -25,7 +28,7 @@ const mapProp = {
 function loadMap() {
     const img = new Image();
     img.src = `${mapProp.mainURL}${mapProp.style}/static/${mapProp.lon},${mapProp.lat},${mapProp.zoom},${mapProp.bearing},${mapProp.pitch}/${mapProp.width}x${mapProp.height}?access_token=${mapProp.token}`
-    ctx.drawImage(img, (w - mapProp.width) / 2, (h - mapProp.height) / 2);
+    img.onload = () => { ctx.drawImage(img, (w - mapProp.width) / 2, (h - mapProp.height) / 2); }
 }
 
 function colorBar() {
@@ -90,12 +93,17 @@ function dataHandler(msg) {
         const y = mercY(lat) - cy + offsetY;
         const colorAngle = 90 - ((mag * 90) / 10); 
 
-        ctx.fillStyle = `hsla(${colorAngle}, 100%, 50%, 1)`;
-        ctx.beginPath();
-        ctx.arc(x, y, 1, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.closePath();
+        ctxData.fillStyle = `hsla(${colorAngle}, 100%, 50%, 1)`;
+        ctxData.beginPath();
+        ctxData.arc(x, y, 1, 0, Math.PI * 2);
+        ctxData.fill();
+        ctxData.closePath();
     });
+     
+    const img = document.getElementById('mapImage');
+    img.src = canvasData.toDataURL('image/png');
+    ctxData.clearRect(0, 0, w, h);
+    img.onload = () => { img.style.opacity = 1; }
 }
 
 // converting degrees to radians

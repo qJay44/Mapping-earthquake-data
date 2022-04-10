@@ -14,4 +14,5 @@ def fromJS(url):
 
     eel.toJS([_ for _ in cr])
 
-eel.start('index.html', size=(1920, 937))
+
+eel.start('index.html', size=(1920, 1080))
